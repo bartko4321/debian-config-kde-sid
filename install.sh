@@ -116,13 +116,32 @@ http://dl.google.com/linux/chrome/deb/ stable main" \
 fi
 
 # Repozytorium Brave (Origin) - wg https://brave.com/origin/linux/
-if [ ! -f /etc/apt/keyrings/brave-browser-archive-keyring.gpg ]; then
-    sudo curl -fsSLo /etc/apt/keyrings/brave-browser-archive-keyring.gpg \
-        https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-    sudo chmod 644 /etc/apt/keyrings/brave-browser-archive-keyring.gpg
-    sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
-        https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+# UWAGA: pliki brave-browser-archive-keyring.gpg oraz brave-core.asc hostowane
+# przez Brave na S3 bywają nieaktualne względem klucza, którym faktycznie
+# podpisują InRelease (znany, powtarzający się problem, np.
+# https://github.com/brave/brave-browser/issues/42949 i #52253), co objawia
+# się błędem "NO_PUBKEY". Dlatego pobieramy klucz bezpośrednio po jego ID
+# z serwera kluczy zamiast z plików hostowanych przez Brave.
+# WAŻNE: nowoczesny gpg domyślnie zapisuje nowo tworzony keyring w formacie
+# "keybox" (.kbx), którego apt NIE obsługuje ("unsupported filetype") —
+# dlatego importujemy do tymczasowego GNUPGHOME i EKSPORTUJEMY klucz do
+# klasycznego formatu binarnego OpenPGP, jakiego wymaga apt. Zapisujemy też
+# klucz pod /usr/share/keyrings, bo tę ścieżkę ma na sztywno wpisaną
+# (Signed-By) plik .sources pobierany bezpośrednio z serwera Brave.
+sudo mkdir -p /usr/share/keyrings
+sudo rm -f /usr/share/keyrings/brave-browser-archive-keyring.gpg
+BRAVE_KEY_ID="0686B78420038257"
+BRAVE_GNUPGHOME="$(mktemp -d)"
+if ! gpg --homedir "$BRAVE_GNUPGHOME" --keyserver hkps://keyserver.ubuntu.com --recv-keys "$BRAVE_KEY_ID"; then
+    log_warn "keyserver.ubuntu.com nie odpowiedział, próbuję keys.openpgp.org..."
+    gpg --homedir "$BRAVE_GNUPGHOME" --keyserver hkps://keys.openpgp.org --recv-keys "$BRAVE_KEY_ID"
 fi
+gpg --homedir "$BRAVE_GNUPGHOME" --export "$BRAVE_KEY_ID" \
+    | sudo tee /usr/share/keyrings/brave-browser-archive-keyring.gpg > /dev/null
+rm -rf "$BRAVE_GNUPGHOME"
+sudo chmod 644 /usr/share/keyrings/brave-browser-archive-keyring.gpg
+sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
+    https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
 
 wait_for_apt
 sudo apt-get update -yq && sudo apt-get upgrade -yq
