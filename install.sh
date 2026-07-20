@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-# KOMPLEKSOWY SKRYPT KONFIGURACYJNY SYSTEMU (KDE PLASMA + DEBIAN)
+# KOMPLEKSOWY SKRYPT KONFIGURACYJNY SYSTEMU (KDE PLASMA + DEBIAN TESTING)
 # ==========================================================
 
 set -euo pipefail
@@ -39,7 +39,23 @@ wait_for_apt() {
 CURRENT_USER=$(whoami)
 OLD_USER_PLACEHOLDER="bartek"
 DEB_DIR="/tmp/debs_$$"
+
+# Debian Testing/Sid zwykle NIE ma pola VERSION= (tylko wydania stabilne je mają) —
+# używamy tego jako wykrywacza gałęzi rolling-release.
+IS_TESTING_OR_SID=false
+if ! grep -q "^VERSION=" /etc/os-release 2>/dev/null; then
+    IS_TESTING_OR_SID=true
+fi
+
 OS_CODENAME=$(grep "VERSION_CODENAME" /etc/os-release | cut -d= -f2 || true)
+if [[ -z "$OS_CODENAME" ]]; then
+    # Testing/Sid często nie mają VERSION_CODENAME w os-release — bierzemy z /etc/debian_version
+    # (tam bywa np. "trixie/sid", więc obcinamy do części przed "/")
+    OS_CODENAME=$(cut -d'/' -f1 /etc/debian_version 2>/dev/null || true)
+fi
+
+log_warn "Ten skrypt jest dostosowany do Debian TESTING — gałęzi rolling-release, w której pakiety"
+log_warn "bywają czasem chwilowo niespójne/uninstallable. Zalecany jest snapshot/backup przed uruchomieniem."
 
 # --- Sprawdzenie uprawnień ---
 if [[ "$EUID" -eq 0 ]]; then
@@ -89,11 +105,16 @@ if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
     fi
 fi
 
-# Backports
-BACKPORTS_FILE="/etc/apt/sources.list.d/backports.list"
-if ! grep -q "${OS_CODENAME}-backports" "$BACKPORTS_FILE" 2>/dev/null; then
-    echo "deb http://deb.debian.org/debian ${OS_CODENAME}-backports main contrib non-free non-free-firmware" \
-        | sudo tee "$BACKPORTS_FILE" > /dev/null
+# Backports (dotyczy tylko wydań Stable — Testing/Sid nie mają osobnego repo backports,
+# ponieważ same w sobie już zawierają najnowsze wersje pakietów)
+if [[ "$IS_TESTING_OR_SID" == false ]]; then
+    BACKPORTS_FILE="/etc/apt/sources.list.d/backports.list"
+    if ! grep -q "${OS_CODENAME}-backports" "$BACKPORTS_FILE" 2>/dev/null; then
+        echo "deb http://deb.debian.org/debian ${OS_CODENAME}-backports main contrib non-free non-free-firmware" \
+            | sudo tee "$BACKPORTS_FILE" > /dev/null
+    fi
+else
+    log_warn "Wykryto Debian Testing/Sid — pomijam konfigurację backports (nie dotyczy tej gałęzi)."
 fi
 
 # Narzędzia potrzebne do konfiguracji kluczy GPG i wykrywania GPU
@@ -144,7 +165,9 @@ sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
     https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
 
 wait_for_apt
-sudo apt-get update -yq && sudo apt-get upgrade -yq
+# Na Debian Testing zwykłe "apt-get upgrade" może nie poradzić sobie ze zmianami zależności
+# przy przejściach bibliotek (library transitions) — dlatego używamy full-upgrade.
+sudo apt-get update -yq && sudo apt-get full-upgrade -yq
 
 # ==========================================================
 # 3. INSTALACJA PAKIETÓW
@@ -152,7 +175,10 @@ sudo apt-get update -yq && sudo apt-get upgrade -yq
 log_info "Instalacja podstawowych narzędzi i firmware..."
 
 wait_for_apt
-sudo apt-get install -yq isenkram-cli firmware-linux firmware-linux-nonfree
+# Na Testing pakiety bywają chwilowo niedostępne/w tranzycji, dlatego nie przerywamy
+# całego skryptu, jeśli akurat brakuje któregoś z metapakietów firmware.
+sudo apt-get install -yq isenkram-cli firmware-linux firmware-linux-nonfree \
+    || log_warn "Nie udało się zainstalować części pakietów firmware (możliwa chwilowa niespójność Testing) — kontynuuję."
 
 sudo isenkram-autoinstall-firmware \
     || log_warn "isenkram-autoinstall-firmware zakończył się błędem (ignoruję)"
