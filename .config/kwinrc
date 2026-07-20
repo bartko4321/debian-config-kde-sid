@@ -3,6 +3,10 @@ Id_1=61b17546-93eb-4622-8129-7f8e7585c8aa
 Number=1
 Rows=1
 
+[Effect-blur]
+BlurStrength=12
+NoiseStrength=4
+
 [Plugins]
 blurEnabled=true
 cubeEnabled=true
