@@ -40,20 +40,6 @@ CURRENT_USER=$(whoami)
 OLD_USER_PLACEHOLDER="bartek"
 DEB_DIR="/tmp/debs_$$"
 
-# Debian Testing/Sid zwykle NIE ma pola VERSION= (tylko wydania stabilne je mają) —
-# używamy tego jako wykrywacza gałęzi rolling-release.
-IS_TESTING_OR_SID=false
-if ! grep -q "^VERSION=" /etc/os-release 2>/dev/null; then
-    IS_TESTING_OR_SID=true
-fi
-
-OS_CODENAME=$(grep "VERSION_CODENAME" /etc/os-release | cut -d= -f2 || true)
-if [[ -z "$OS_CODENAME" ]]; then
-    # Testing/Sid często nie mają VERSION_CODENAME w os-release — bierzemy z /etc/debian_version
-    # (tam bywa np. "trixie/sid", więc obcinamy do części przed "/")
-    OS_CODENAME=$(cut -d'/' -f1 /etc/debian_version 2>/dev/null || true)
-fi
-
 log_warn "Ten skrypt jest dostosowany do Debian TESTING — gałęzi rolling-release, w której pakiety"
 log_warn "bywają czasem chwilowo niespójne/uninstallable. Zalecany jest snapshot/backup przed uruchomieniem."
 
@@ -91,37 +77,20 @@ sudo sed -i '/cdrom/s/^/#/' /etc/apt/sources.list 2>/dev/null || true
 # Dodaj architektury
 sudo dpkg --add-architecture i386
 
-# Rozszerzenie repozytoriów o contrib, non-free, non-free-firmware oraz otherosfs (stary format)
-# otherosfs to nowy komponent (od Trixie) zawierający m.in. pakiety wine/wine32/wine64 —
-# bez niego apt w ogóle ich nie widzi, mimo poprawnie dodanej architektury i386.
+# Rozszerzenie repozytoriów o contrib, non-free, non-free-firmware (stary format)
 if [[ -f /etc/apt/sources.list ]]; then
     if ! grep -q "non-free-firmware" /etc/apt/sources.list; then
-        sudo sed -i -E 's/ main($| )/ main contrib non-free non-free-firmware otherosfs\1/' /etc/apt/sources.list || true
-    elif ! grep -q "otherosfs" /etc/apt/sources.list; then
-        sudo sed -i -E 's/ main($| )/ main otherosfs\1/' /etc/apt/sources.list || true
+        sudo sed -i -E 's/ main($| )/ main contrib non-free non-free-firmware\1/' /etc/apt/sources.list || true
     fi
 fi
 
 # Rozszerzenie repozytoriów dla Debiana 12+ (nowy format DEB822)
 if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
     if ! grep -q "non-free-firmware" /etc/apt/sources.list.d/debian.sources; then
-        sudo sed -i -E '/^Components:/ s/$/ contrib non-free non-free-firmware otherosfs/' /etc/apt/sources.list.d/debian.sources || true
-    elif ! grep -q "otherosfs" /etc/apt/sources.list.d/debian.sources; then
-        sudo sed -i -E '/^Components:/ s/$/ otherosfs/' /etc/apt/sources.list.d/debian.sources || true
+        sudo sed -i -E '/^Components:/ s/$/ contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources || true
     fi
 fi
 
-# Backports (dotyczy tylko wydań Stable — Testing/Sid nie mają osobnego repo backports,
-# ponieważ same w sobie już zawierają najnowsze wersje pakietów)
-if [[ "$IS_TESTING_OR_SID" == false ]]; then
-    BACKPORTS_FILE="/etc/apt/sources.list.d/backports.list"
-    if ! grep -q "${OS_CODENAME}-backports" "$BACKPORTS_FILE" 2>/dev/null; then
-        echo "deb http://deb.debian.org/debian ${OS_CODENAME}-backports main contrib non-free non-free-firmware" \
-            | sudo tee "$BACKPORTS_FILE" > /dev/null
-    fi
-else
-    log_warn "Wykryto Debian Testing/Sid — pomijam konfigurację backports (nie dotyczy tej gałęzi)."
-fi
 
 # Narzędzia potrzebne do konfiguracji kluczy GPG i wykrywania GPU
 wait_for_apt
