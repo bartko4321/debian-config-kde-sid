@@ -91,17 +91,23 @@ sudo sed -i '/cdrom/s/^/#/' /etc/apt/sources.list 2>/dev/null || true
 # Dodaj architektury
 sudo dpkg --add-architecture i386
 
-# Rozszerzenie repozytoriów o contrib, non-free i non-free-firmware (stary format)
+# Rozszerzenie repozytoriów o contrib, non-free, non-free-firmware oraz otherosfs (stary format)
+# otherosfs to nowy komponent (od Trixie) zawierający m.in. pakiety wine/wine32/wine64 —
+# bez niego apt w ogóle ich nie widzi, mimo poprawnie dodanej architektury i386.
 if [[ -f /etc/apt/sources.list ]]; then
     if ! grep -q "non-free-firmware" /etc/apt/sources.list; then
-        sudo sed -i -E 's/ main($| )/ main contrib non-free non-free-firmware\1/' /etc/apt/sources.list || true
+        sudo sed -i -E 's/ main($| )/ main contrib non-free non-free-firmware otherosfs\1/' /etc/apt/sources.list || true
+    elif ! grep -q "otherosfs" /etc/apt/sources.list; then
+        sudo sed -i -E 's/ main($| )/ main otherosfs\1/' /etc/apt/sources.list || true
     fi
 fi
 
 # Rozszerzenie repozytoriów dla Debiana 12+ (nowy format DEB822)
 if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
     if ! grep -q "non-free-firmware" /etc/apt/sources.list.d/debian.sources; then
-        sudo sed -i -E '/^Components:/ s/$/ contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources || true
+        sudo sed -i -E '/^Components:/ s/$/ contrib non-free non-free-firmware otherosfs/' /etc/apt/sources.list.d/debian.sources || true
+    elif ! grep -q "otherosfs" /etc/apt/sources.list.d/debian.sources; then
+        sudo sed -i -E '/^Components:/ s/$/ otherosfs/' /etc/apt/sources.list.d/debian.sources || true
     fi
 fi
 
@@ -202,7 +208,7 @@ log_info "Instalacja pakietów głównych..."
 wait_for_apt
 PACKAGES_INSTALL=(
     # Przeglądarki komunikatory
-    google-chrome-stable brave-origin thunderbird thunderbird-i18n-pl telegram-desktop 
+    google-chrome-stable brave-origin thunderbird thunderbird-l10n-pl telegram-desktop
     # Multimedia
     qbittorrent krita audacity gmic mixxx kdenlive
     # Narzędzia systemowe
@@ -215,7 +221,7 @@ PACKAGES_INSTALL=(
     python3-defusedxml python3-packaging python3-pip python3-tqdm
     # Gaming / GPU
     libayatana-appindicator3-1 gamemode vulkan-tools mangohud
-    vkd3d-compiler goverlay winetricks
+    vkd3d-compiler goverlay
     # Kompilacja
     gcc make cmake meson ninja-build just build-essential git
     # GStreamer
@@ -223,12 +229,35 @@ PACKAGES_INSTALL=(
     # Inne
     zsh zsh-syntax-highlighting zsh-autosuggestions
 )
-sudo apt-get install -yq "${PACKAGES_INSTALL[@]}"
+# Instalujemy paczkami pojedynczo, aby chwilowy brak jednego pakietu w Testing/Sid
+# (np. zablokowana migracja) nie przerywał instalacji reszty.
+FAILED_PACKAGES=()
+for pkg in "${PACKAGES_INSTALL[@]}"; do
+    sudo apt-get install -yq "$pkg" || FAILED_PACKAGES+=("$pkg")
+done
+if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
+    log_warn "Nie udało się zainstalować: ${FAILED_PACKAGES[*]} — kontynuuję."
+fi
+
+# --- winetricks: pakiet bywa chwilowo niedostępny w Testing/Sid (zablokowana migracja
+# w Debianie), a to w istocie jeden skrypt bash bez zależności binarnych —
+# instalujemy go więc bezpośrednio z GitHuba, z apt jako opcją zapasową.
+log_info "Instalacja winetricks..."
+sudo apt-get install -yq cabextract unzip wget >/dev/null 2>&1 || true
+if sudo apt-get install -yq winetricks; then
+    log_ok "winetricks zainstalowany z apt"
+elif sudo curl -fsSLo /usr/local/bin/winetricks \
+        https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks \
+     && sudo chmod +x /usr/local/bin/winetricks; then
+    log_ok "winetricks zainstalowany bezpośrednio z GitHub (apt nie miał pakietu)"
+else
+    log_warn "Nie udało się zainstalować winetricks — pomijam."
+fi
 
 # --- WINE ORAZ 32-BITOWE BIBLIOTEKI DO GIER ---
 log_info "Instalacja Wine oraz 32-bitowych bibliotek (Audio, MangoHud)..."
 wait_for_apt
-sudo apt-get install -yq wine wine64 wine32 libpulse0:i386 libopenal1:i386 mangohud:i386
+sudo apt-get install -yq wine wine64 wine32:i386 libpulse0:i386 libopenal1:i386 mangohud:i386
 
 # ==========================================================
 # WYKRYWANIE GPU: 32-BITOWE BIBLIOTEKI I MODUŁY INITRAMFS
