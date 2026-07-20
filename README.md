@@ -13,7 +13,7 @@ The script performs a full system deployment divided into several logical stages
 ### ⚙️ 1. Repositories & Updates
 * Disables outdated CD-ROM entries in `sources.list`.
 * Enables the `i386` architecture (required for games and Wine).
-* Extends repositories with `contrib`, `non-free`, and `non-free-firmware` sections (supports both the old format and the new `DEB822` format in Debian 12+).
+* Extends repositories with `contrib`, `non-free`, and `non-free-firmware` sections (supports both the old format and the new `DEB822` format in Debian).
 * Adds official repositories for external applications: **Google Chrome** and **Brave Browser**.
 * Activates the **Flathub** repository (Flatpak).
 * Safely waits for APT locks held by other system processes to be released.
