@@ -84,12 +84,12 @@ The script **cannot** be run directly from the `root` account (via `su` or `sudo
 
 ### Step 1: Clone the repository or download the files
 ```bash
-git clone https://github.com/bartko4321/debian-config-kde.git
+git clone https://github.com/bartko4321/debian-config-kde-sid.git
 ```
 
 ### Step 2: Enter the downloaded folder
 ```bash
-cd debian-config-kde
+cd debian-config-kde-sid
 ```
 
 ### Step 3: Make the script executable
