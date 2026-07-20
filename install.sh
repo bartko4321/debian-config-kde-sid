@@ -224,9 +224,40 @@ else
 fi
 
 # --- WINE ORAZ 32-BITOWE BIBLIOTEKI DO GIER ---
+# UWAGA: pakiet "wine" na Debian Testing bywa okresowo całkowicie nieobecny
+# w repozytorium (blokada migracji z unstable do testing - znany, powtarzający
+# się problem, patrz https://bugs.debian.org/1124433). W takiej sytuacji
+# "apt-get install wine" kończy się błędem "nie ma kandydata do instalacji"
+# mimo poprawnej konfiguracji repozytoriów. Dlatego najpierw próbujemy
+# zainstalować Wine z repozytorium Debiana, a jeśli się nie uda - używamy
+# oficjalnego repozytorium WineHQ jako zapasowego źródła.
 log_info "Instalacja Wine oraz 32-bitowych bibliotek (Audio, MangoHud)..."
 wait_for_apt
-sudo apt-get install -yq wine wine64 wine32:i386 libpulse0:i386 libopenal1:i386 mangohud:i386
+sudo apt-get install -yq libpulse0:i386 libopenal1:i386 mangohud:i386
+
+if sudo apt-get install -yq wine wine64 wine32:i386; then
+    log_ok "Wine zainstalowany z repozytorium Debiana"
+else
+    log_warn "Pakiet wine niedostępny w repozytorium Debiana (prawdopodobnie zablokowana"
+    log_warn "migracja do Testing) - dodaję repozytorium WineHQ jako źródło zapasowe..."
+
+    sudo mkdir -pm755 /etc/apt/keyrings
+    if sudo curl -fsSLo /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key \
+        && sudo curl -fsSLo /etc/apt/sources.list.d/winehq.sources \
+            https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources; then
+        # WineHQ nie publikuje jeszcze paczek dla "forky" (Testing), ale paczki
+        # z "trixie" (obecny stable) działają na Testing bez problemu.
+        wait_for_apt
+        sudo apt-get update -yq
+        if sudo apt-get install -yq --install-recommends winehq-stable; then
+            log_ok "Wine zainstalowany z repozytorium WineHQ (winehq-stable)"
+        else
+            log_err "Nie udało się zainstalować Wine ani z Debiana, ani z WineHQ - pomijam."
+        fi
+    else
+        log_err "Nie udało się pobrać klucza/repozytorium WineHQ - Wine nie został zainstalowany."
+    fi
+fi
 
 # ==========================================================
 # WYKRYWANIE GPU: 32-BITOWE BIBLIOTEKI I MODUŁY INITRAMFS
