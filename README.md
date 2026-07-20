@@ -76,7 +76,7 @@ To allow the script to fully utilize its potential and not skip the visual confi
 ---
 ### Adding a user to the sudo group:
 ```bash
-sudo usermod -aG sudo "$USER"
+sudo usermod -aG sudo $USER
 ```
 ## 🚀 How to Run
 
