@@ -18,12 +18,16 @@
   </Exclude>
   <Layout>
    <Merge type="files"/>
+   <Filename>org.kde.sieveeditor.desktop</Filename>
+   <Filename>org.kde.kmail2.desktop</Filename>
+   <Filename>org.kde.korganizer.desktop</Filename>
+   <Filename>org.kde.kaddressbook.desktop</Filename>
+   <Filename>org.kde.ktnef.desktop</Filename>
    <Filename>libreoffice-startcenter.desktop</Filename>
-   <Filename>libreoffice-calc.desktop</Filename>
-   <Filename>libreoffice-impress.desktop</Filename>
-   <Filename>libreoffice-math.desktop</Filename>
-   <Filename>libreoffice-writer.desktop</Filename>
    <Filename>org.kde.okular.desktop</Filename>
+   <Filename>org.kde.contactprintthemeeditor.desktop</Filename>
+   <Filename>org.kde.contactthemeeditor.desktop</Filename>
+   <Filename>org.kde.headerthemeeditor.desktop</Filename>
    <Separator/>
    <Merge type="menus"/>
    <Menuname>More</Menuname>
@@ -39,8 +43,8 @@
    <Filename>gimp.desktop</Filename>
    <Filename>org.kde.gwenview.desktop</Filename>
    <Filename>display-im7.q16.desktop</Filename>
+   <Filename>org.kde.kontrast.desktop</Filename>
    <Filename>org.kde.krita.desktop</Filename>
-   <Filename>libreoffice-draw.desktop</Filename>
    <Separator/>
    <Merge type="menus"/>
    <Menuname>More</Menuname>
@@ -71,19 +75,21 @@
    <Filename>vim.desktop</Filename>
    <Filename>mcedit.desktop</Filename>
    <Filename>mc.desktop</Filename>
+   <Filename>bleachbit-root.desktop</Filename>
   </Exclude>
   <Layout>
    <Merge type="files"/>
    <Filename>org.kde.ark.desktop</Filename>
    <Filename>org.bleachbit.BleachBit.desktop</Filename>
-   <Filename>com.github.tchx84.Flatseal.desktop</Filename>
    <Filename>org.kde.sweeper.desktop</Filename>
+   <Filename>com.github.tchx84.Flatseal.desktop</Filename>
    <Filename>org.kde.kcalc.desktop</Filename>
    <Filename>org.kde.kate.desktop</Filename>
    <Filename>org.kde.kfind.desktop</Filename>
    <Filename>org.kde.kmag.desktop</Filename>
    <Filename>org.kde.kmousetool.desktop</Filename>
    <Filename>org.kde.kmouth.desktop</Filename>
+   <Filename>org.kde.ktnef.desktop</Filename>
    <Merge type="menus"/>
    <Menuname>XUtilities</Menuname>
    <Filename>it.mijorus.gearlever.desktop</Filename>
@@ -161,13 +167,14 @@
    <Filename>debian-uxterm.desktop</Filename>
    <Filename>debian-xterm.desktop</Filename>
    <Filename>org.kde.kwalletmanager.desktop</Filename>
+   <Filename>bleachbit-root.desktop</Filename>
   </Include>
  </Menu>
  <Menu>
   <Name>Games</Name>
   <Layout>
    <Merge type="files"/>
-   <Filename>faugus-launcher.desktop</Filename>
+   <Filename>io.github.Faugus.faugus-launcher.desktop</Filename>
    <Filename>io.github.benjamimgois.goverlay.desktop</Filename>
    <Merge type="menus"/>
    <Menuname>Kidsgames</Menuname>
@@ -185,16 +192,23 @@
    <Filename>org.kde.akregator.desktop</Filename>
    <Filename>brave-origin.desktop</Filename>
    <Filename>discord.desktop</Filename>
+   <Filename>org.kde.sieveeditor.desktop</Filename>
+   <Filename>org.kde.pimdataexporter.desktop</Filename>
    <Filename>firefox-esr.desktop</Filename>
-   <Filename>gmail.desktop</Filename>
    <Filename>google-chrome.desktop</Filename>
    <Filename>org.kde.kdeconnect.app.desktop</Filename>
    <Filename>org.kde.kdeconnect.sms.desktop</Filename>
+   <Filename>thunderbird.desktop</Filename>
+   <Filename>org.kde.kmail2.desktop</Filename>
+   <Filename>konqbrowser.desktop</Filename>
+   <Filename>org.kde.ktnef.desktop</Filename>
    <Merge type="menus"/>
    <Menuname>Terminal</Menuname>
    <Filename>org.qbittorrent.qBittorrent.desktop</Filename>
    <Filename>org.telegram.desktop.desktop</Filename>
-   <Filename>org.mozilla.Thunderbird.desktop</Filename>
+   <Filename>org.kde.contactprintthemeeditor.desktop</Filename>
+   <Filename>org.kde.contactthemeeditor.desktop</Filename>
+   <Filename>org.kde.headerthemeeditor.desktop</Filename>
    <Separator/>
    <Menuname>More</Menuname>
   </Layout>
